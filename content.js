@@ -10,35 +10,36 @@ function createBookmarkButton() {
   return button;
 }
 
-// Function to check if a link is bookmarked
-function isBookmarked(url) {
-  const bookmarks = JSON.parse(localStorage.getItem('linkBookmarks') || '[]');
-  return bookmarks.includes(url);
-}
+// Using BookmarkManager object from core.js
 
 // Function to toggle bookmark status
-function toggleBookmark(url, button) {
-  let bookmarks = JSON.parse(localStorage.getItem('linkBookmarks') || '[]');
-  
-  if (isBookmarked(url)) {
-    bookmarks = bookmarks.filter(bookmark => bookmark !== url);
+async function toggleBookmark(url, button) {
+  try {
+    const isCurrentlyBookmarked = await BookmarkManager.isBookmarked(url);
+    
+    if (isCurrentlyBookmarked) {
+      await BookmarkManager.removeBookmark(url);
+      button.classList.remove('active');
+    } else {
+      await BookmarkManager.addBookmark(url);
+      button.classList.add('active');
+    }
+  } catch (error) {
+    console.error('Error toggling bookmark:', error);
+    // Revert any UI changes if operation failed
     button.classList.remove('active');
-  } else {
-    bookmarks.push(url);
-    button.classList.add('active');
   }
-  
-  localStorage.setItem('linkBookmarks', JSON.stringify(bookmarks));
 }
 
 // Function to add bookmark buttons to all links
-function addBookmarkButtons() {
+async function addBookmarkButtons() {
   const links = document.querySelectorAll('a');
   
-  links.forEach(link => {
+  for (const link of links) {
     if (!link.querySelector('.bookmark-btn')) {
       const button = createBookmarkButton();
-      if (isBookmarked(link.href)) {
+      const isCurrentlyBookmarked = await BookmarkManager.isBookmarked(link.href);
+      if (isCurrentlyBookmarked) {
         button.classList.add('active');
       }
       
@@ -51,7 +52,7 @@ function addBookmarkButtons() {
       link.style.position = 'relative';
       link.appendChild(button);
     }
-  });
+  }
 }
 
 // Function to update bookmark icon visibility
@@ -79,8 +80,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Initial visibility setup
-const alwaysShowIcons = localStorage.getItem('alwaysShowIcons') === 'true';
-updateBookmarkIconVisibility(alwaysShowIcons);
+chrome.storage.local.get(['alwaysShowIcons'], (result) => {
+  const alwaysShowIcons = result.alwaysShowIcons || false;
+  updateBookmarkIconVisibility(alwaysShowIcons);
+});
 
 // Initial setup
 addBookmarkButtons();
