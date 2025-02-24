@@ -49,46 +49,68 @@
       color: #666;
       padding: 16px;
     }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin: 16px 0;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      margin-left: 8px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+      background-color: #007bff;
+    }
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
   </style>
 </head>
 <body>
   <h2>Your Bookmarks</h2>
+  <div class="toggle-container">
+    <span>Always show bookmark icons</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="iconToggle">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <h3 id="website"></h3>
   <div id="bookmarkList" class="bookmark-list"></div>
 
-  <script>
-    function displayBookmarks() {
-      const bookmarkList = document.getElementById('bookmarkList');
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        const currentUrl = new URL(tabs[0].url);
-        const bookmarks = JSON.parse(localStorage.getItem('linkBookmarks') || '[]');
-        
-        if (bookmarks.length === 0) {
-          bookmarkList.innerHTML = '<div class="no-bookmarks">No bookmarks saved yet</div>';
-          return;
-        }
-
-        bookmarkList.innerHTML = bookmarks.map(url => `
-          <div class="bookmark-item">
-            <a href="${url}" class="bookmark-link" target="_blank">${url}</a>
-            <button class="remove-btn" data-url="${url}">Remove</button>
-          </div>
-        `).join('');
-
-        // Add click handlers for remove buttons
-        document.querySelectorAll('.remove-btn').forEach(button => {
-          button.addEventListener('click', function() {
-            const url = this.dataset.url;
-            const bookmarks = JSON.parse(localStorage.getItem('linkBookmarks') || '[]');
-            const updatedBookmarks = bookmarks.filter(bookmark => bookmark !== url);
-            localStorage.setItem('linkBookmarks', JSON.stringify(updatedBookmarks));
-            displayBookmarks();
-          });
-        });
-      });
-    }
-
-    // Initial display
-    displayBookmarks();
-  </script>
+  <script src="popup.js"></script>
 </body>
 </html>
